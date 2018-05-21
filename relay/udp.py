@@ -1,7 +1,22 @@
-import sys
+import logging
 import socket
+import sys
 import threading
+
+import hooker
+
 from relay import status
+
+hooker.EVENTS.append([
+    "udp.start",
+    "udp.pre_recv",
+    "udp.post_recv",
+    "udp.pre_c2s",
+    "udp.post_c2s",
+    "udp.pre_s2c",
+    "udp.post_s2c",
+    "udp.stop"
+])
 
 _KILL = False
 _RELAYPORT = 0
@@ -17,11 +32,17 @@ def relay():
     clientport = 0
     clientip = ""
 
+    hooker.EVENTS["udp.start"]()
+
     while True:
+        hooker.EVENTS["udp.pre_recv"](sock)
         data, fromaddr = sock.recvfrom(1024)
+        hooker.EVENTS["udp.pre_recv"](sock, data, fromaddr)
 
         if _KILL:
+            hooker.EVENTS["udp.stop"](sock)
             sock.close()
+
             return
 
         if not incomingsetup:
@@ -29,13 +50,17 @@ def relay():
             clientip = fromaddr[0]
             incomingsetup = True
 
-        if fromaddr[0] == clientip:
+        if fromaddr[0] == clientip and fromaddr[1] == clientport:
             # Forward from client to server
+            hooker.EVENTS["udp.pre_c2s"](data)
             sock.sendto(data, (_REMOTEADDRESS, _REMOTEPORT))
+            hooker.EVENTS["udp.post_c2s"](data)
             status.BYTESTOREMOTE += sys.getsizeof(data)
         else:
             # Forward from server to client
+            hooker.EVENTS["udp.pre_s2c"](data)
             sock.sendto(data, (clientip, clientport))
+            hooker.EVENTS["udp.post_s2c"](data)
             status.BYTESFROMREMOTE += sys.getsizeof(data)
 
 

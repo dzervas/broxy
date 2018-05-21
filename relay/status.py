@@ -17,7 +17,7 @@ def reportbandwidth():
 
     step = 0
 
-    while True:
+    while False:
         time.sleep(1)
 
         if sys.platform == "win32":

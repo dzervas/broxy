@@ -1,7 +1,20 @@
 import sys
 import socket
 import threading
+
+import hooker
+
 from relay import status
+
+hooker.EVENTS.append([
+    "tcp.start",
+    "tcp.accept",
+    "tcp.pre_c2s",
+    "tcp.post_c2s",
+    "tcp.pre_s2c",
+    "tcp.post_s2c",
+    "tcp.stop"
+])
 
 _KILL = False
 _RELAYPORT = 0
@@ -21,10 +34,13 @@ def acceptclients():
     clientsock.bind(("0.0.0.0", _RELAYPORT))
     clientsock.listen(10)
 
+    hooker.EVENTS["tcp.start"]()
+
     while True:
         clientconn, _ = clientsock.accept()
 
         if _KILL:
+            hooker.EVENTS["tcp.stop"](sock)
             clientsock.close()
             for sock in _SOCKS:
                 sock.close()
@@ -32,6 +48,7 @@ def acceptclients():
 
         serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serversock.connect((_REMOTEADDRESS, _REMOTEPORT))
+        hooker.EVENTS["tcp.accept"](clientsock, serversock)
 
         _SOCKS.append(clientconn)
         _SOCKS.append(serversock)
@@ -68,11 +85,13 @@ def client(clnt, srv):
         try:
             data = clnt.recv(1)
 
-            if data == "":
+            if not data:
                 close(clnt, srv)
                 break
 
+            hooker.EVENTS["tcp.pre_c2s"](data, clnt, srv)
             srv.sendall(data)
+            hooker.EVENTS["tcp.post_c2s"](data, clnt, srv)
             status.BYTESTOREMOTE += sys.getsizeof(data)
         except socket.error:
             close(clnt, srv)
@@ -91,7 +110,9 @@ def server(clnt, srv):
                 close(clnt, srv)
                 break
 
+            hooker.EVENTS["tcp.pre_s2c"](data, clnt, srv)
             clnt.sendall(data)
+            hooker.EVENTS["tcp.post_s2c"](data, clnt, srv)
             status.BYTESFROMREMOTE += sys.getsizeof(data)
         except socket.error:
             close(clnt, srv)
