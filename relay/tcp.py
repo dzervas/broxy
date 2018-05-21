@@ -1,4 +1,5 @@
 import sys
+import ssl
 import socket
 import threading
 
@@ -27,10 +28,12 @@ _SERVERS = 0
 _SOCKS = []
 
 
-def acceptclients():
+def acceptclients(use_ssl, cert, key):
     global _SOCKS
 
     clientsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if use_ssl:
+        clientsock = ssl.wrap_socket(clientsock, keyfile=key, certfile=cert, server_side=True)
     clientsock.bind(("0.0.0.0", _RELAYPORT))
     clientsock.listen(10)
 
@@ -40,13 +43,15 @@ def acceptclients():
         clientconn, _ = clientsock.accept()
 
         if _KILL:
-            hooker.EVENTS["tcp.stop"](sock)
+            hooker.EVENTS["tcp.stop"](clientsock)
             clientsock.close()
             for sock in _SOCKS:
                 sock.close()
             return
 
         serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if use_ssl:
+            serversock = ssl.wrap_socket(serversock, keyfile=key, certfile=cert, server_side=False)
         serversock.connect((_REMOTEADDRESS, _REMOTEPORT))
         hooker.EVENTS["tcp.accept"](clientsock, serversock)
 
@@ -83,7 +88,7 @@ def client(clnt, srv):
     _CLIENTS += 1
     while True:
         try:
-            data = clnt.recv(1)
+            data = bytearray(clnt.recv(1))
 
             if not data:
                 close(clnt, srv)
@@ -104,7 +109,7 @@ def server(clnt, srv):
     _SERVERS += 1
     while True:
         try:
-            data = srv.recv(1)
+            data = bytearray(srv.recv(1))
 
             if data == "":
                 close(clnt, srv)
@@ -120,7 +125,7 @@ def server(clnt, srv):
     _SERVERS -= 1
 
 
-def start(relayport, remoteaddress, remoteport):
+def start(relayport, remoteaddress, remoteport, use_ssl, cert, key):
     global _RELAYPORT
     global _REMOTEADDRESS
     global _REMOTEPORT
@@ -129,7 +134,7 @@ def start(relayport, remoteaddress, remoteport):
     _REMOTEADDRESS = remoteaddress
     _REMOTEPORT = remoteport
 
-    acceptthread = threading.Thread(target=acceptclients)
+    acceptthread = threading.Thread(target=acceptclients, args=(use_ssl, cert, key))
     acceptthread.start()
 
 

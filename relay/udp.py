@@ -37,6 +37,7 @@ def relay():
     while True:
         hooker.EVENTS["udp.pre_recv"](sock)
         data, fromaddr = sock.recvfrom(1024)
+        data = bytearray(data)
         hooker.EVENTS["udp.pre_recv"](sock, data, fromaddr)
 
         if _KILL:

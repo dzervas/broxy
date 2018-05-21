@@ -14,9 +14,16 @@ RELAYPORT = 0
 REMOTEPORT = 0
 REMOTEADDRESS = ""
 PROTOCOL = "UDP"
+SSL = False
+CERT = None
+KEY = None
 
-HELP = """Invalid arguments, usage:
-    boxy.py -i <input port> -p <remote port> -a <remote address> [-t]"""
+HELP = """
+Invalid arguments, usage:
+    boxy.py -i <input port> -p <remote port> -a <remote address> [-t|-s -c <cert-file> -k <key-file>]
+    To create a self signed certificate:
+        openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+"""
 
 
 def stop():
@@ -33,7 +40,7 @@ def stop():
 
 # Process args
 try:
-    OPTIONS, ARGS = getopt.getopt(sys.argv[1:], "i:p:a:t")
+    OPTIONS, ARGS = getopt.getopt(sys.argv[1:], "c:k:i:p:a:ts")
 except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -48,6 +55,13 @@ try:
             REMOTEADDRESS = arg
         elif option == "-t":
             PROTOCOL = "TCP"
+        elif option == "-s":
+            PROTOCOL = "TCP"
+            SSL = True
+        elif option == "-c":
+            CERT = arg
+        elif option == "-k":
+            KEY = arg
 except ValueError:
     print(HELP)
     sys.exit(2)
@@ -56,15 +70,19 @@ if not (0 < RELAYPORT <= 65535 and 0 < REMOTEPORT <= 65535 and REMOTEADDRESS != 
     print(HELP)
     sys.exit(2)
 
+if SSL and not (CERT and KEY):
+    print(HELP)
+    sys.exit(2)
+
 print("Relay starting on port {0}, relaying {1} to {2}:{3}"
       .format(RELAYPORT, PROTOCOL, REMOTEADDRESS, REMOTEPORT))
 
-hooker.EVENTS["boxy.start"](RELAYPORT, REMOTEADDRESS, REMOTEPORT)
+hooker.EVENTS["boxy.start"](RELAYPORT, REMOTEADDRESS, REMOTEPORT, PROTOCOL, SSL, CERT, KEY)
 
 if PROTOCOL == "UDP":
     udp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT)
 else:
-    tcp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT)
+    tcp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT, SSL, CERT, KEY)
 
 status.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT)
 

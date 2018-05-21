@@ -5,8 +5,12 @@ logging.basicConfig(filename='boxy.log', level=logging.DEBUG)
 
 
 @hook("boxy.start")
-def start(lport, rhost, rport):
-    logging.info("Started relay localhost:%d <-> %s:%d" % (lport, rhost, rport))
+def start(lport, rhost, rport, protocol, ssl, cert, key):
+    sslstr = ""
+    if ssl:
+        protocol = "SSL"
+        sslstr += " using cert: %s and key: %s" % (cert, key)
+    logging.info("Started %s%s relay localhost:%d <-> %s:%d" % (protocol, sslstr, lport, rhost, rport))
 
 
 @hook("tcp.pre_c2s")
