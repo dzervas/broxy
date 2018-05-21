@@ -21,6 +21,7 @@ _KILL = False
 _RELAYPORT = 0
 _REMOTEADDRESS = ""
 _REMOTEPORT = 0
+_RECVBUFF = 0
 
 _CLIENTS = 0
 _SERVERS = 0
@@ -84,11 +85,14 @@ def close(clnt, srv):
 
 
 def client(clnt, srv):
+    global _RECVBUFF
     global _CLIENTS
+
     _CLIENTS += 1
+
     while True:
         try:
-            data = bytearray(clnt.recv(1))
+            data = bytearray(clnt.recv(_RECVBUFF))
 
             if not data:
                 close(clnt, srv)
@@ -101,15 +105,19 @@ def client(clnt, srv):
         except socket.error:
             close(clnt, srv)
             break
+
     _CLIENTS -= 1
 
 
 def server(clnt, srv):
+    global _RECVBUFF
     global _SERVERS
+
     _SERVERS += 1
+
     while True:
         try:
-            data = bytearray(srv.recv(1))
+            data = bytearray(srv.recv(_RECVBUFF))
 
             if data == "":
                 close(clnt, srv)
@@ -122,17 +130,20 @@ def server(clnt, srv):
         except socket.error:
             close(clnt, srv)
             break
+
     _SERVERS -= 1
 
 
-def start(relayport, remoteaddress, remoteport, use_ssl, cert, key):
+def start(relayport, remoteaddress, remoteport, recvbuff, use_ssl, cert, key):
     global _RELAYPORT
     global _REMOTEADDRESS
     global _REMOTEPORT
+    global _RECVBUFF
 
     _RELAYPORT = relayport
     _REMOTEADDRESS = remoteaddress
     _REMOTEPORT = remoteport
+    _RECVBUFF = recvbuff
 
     acceptthread = threading.Thread(target=acceptclients, args=(use_ssl, cert, key))
     acceptthread.start()

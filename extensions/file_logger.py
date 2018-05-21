@@ -18,14 +18,14 @@ def start(lport, rhost, rport, protocol, ssl, cert, key):
 def tc2s(data, client, server):
     caddr = client.getsockname()
     saddr = server.getsockname()
-    logging.info("%s:%d->%s:%d %s" % (caddr[0], caddr[1], saddr[0], saddr[1], data.strip()))
+    logging.info("%s:%d->%s:%d %s%s" % (caddr[0], caddr[1], saddr[0], saddr[1], data.strip(), " " * 100))
 
 
 @hook("tcp.pre_s2c")
 def ts2c(data, client, server):
     caddr = client.getsockname()
     saddr = server.getsockname()
-    logging.info("%s:%d<-%s:%d %s" % (caddr[0], caddr[1], saddr[0], saddr[1], data.strip()))
+    logging.info("%s:%d<-%s:%d %s%s" % (caddr[0], caddr[1], saddr[0], saddr[1], data.strip(), " " * 100))
 
 
 @hook("udp.pre_c2s")

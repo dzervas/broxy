@@ -13,6 +13,7 @@ import extensions.file_logger
 RELAYPORT = 0
 REMOTEPORT = 0
 REMOTEADDRESS = ""
+RECVBUFF = 2048
 PROTOCOL = "UDP"
 SSL = False
 CERT = None
@@ -40,7 +41,7 @@ def stop():
 
 # Process args
 try:
-    OPTIONS, ARGS = getopt.getopt(sys.argv[1:], "c:k:i:p:a:ts")
+    OPTIONS, ARGS = getopt.getopt(sys.argv[1:], "b:c:k:i:p:a:ts")
 except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -62,6 +63,8 @@ try:
             CERT = arg
         elif option == "-k":
             KEY = arg
+        elif option == "-b":
+            RECVBUFF = int(arg)
 except ValueError:
     print(HELP)
     sys.exit(2)
@@ -80,9 +83,9 @@ print("Relay starting on port {0}, relaying {1} to {2}:{3}"
 hooker.EVENTS["boxy.start"](RELAYPORT, REMOTEADDRESS, REMOTEPORT, PROTOCOL, SSL, CERT, KEY)
 
 if PROTOCOL == "UDP":
-    udp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT)
+    udp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT, RECVBUFF)
 else:
-    tcp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT, SSL, CERT, KEY)
+    tcp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT, RECVBUFF, SSL, CERT, KEY)
 
 status.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT)
 

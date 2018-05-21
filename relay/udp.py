@@ -24,7 +24,7 @@ _REMOTEADDRESS = ""
 _REMOTEPORT = 0
 
 
-def relay():
+def relay(recvbuff):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", _RELAYPORT))
 
@@ -36,7 +36,7 @@ def relay():
 
     while True:
         hooker.EVENTS["udp.pre_recv"](sock)
-        data, fromaddr = sock.recvfrom(1024)
+        data, fromaddr = sock.recvfrom(recvbuff)
         data = bytearray(data)
         hooker.EVENTS["udp.pre_recv"](sock, data, fromaddr)
 
@@ -65,7 +65,7 @@ def relay():
             status.BYTESFROMREMOTE += sys.getsizeof(data)
 
 
-def start(relayport, remoteaddress, remoteport):
+def start(relayport, remoteaddress, remoteport, recvbuff):
     global _RELAYPORT
     global _REMOTEADDRESS
     global _REMOTEPORT
@@ -74,7 +74,7 @@ def start(relayport, remoteaddress, remoteport):
     _REMOTEADDRESS = remoteaddress
     _REMOTEPORT = remoteport
 
-    relaythread = threading.Thread(target=relay)
+    relaythread = threading.Thread(target=relay, args=(recvbuff))
     relaythread.start()
 
 
