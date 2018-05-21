@@ -74,7 +74,7 @@ def start(relayport, remoteaddress, remoteport, recvbuff):
     _REMOTEADDRESS = remoteaddress
     _REMOTEPORT = remoteport
 
-    relaythread = threading.Thread(target=relay, args=(recvbuff))
+    relaythread = threading.Thread(target=relay, args=[recvbuff])
     relaythread.start()
 
 
