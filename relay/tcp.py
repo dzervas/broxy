@@ -47,7 +47,6 @@ def acceptclients(use_ssl, cert, key):
             serversock = ssl.wrap_socket(serversock, keyfile=key, certfile=cert, server_side=False)
 
         serversock.connect((_REMOTEADDRESS, _REMOTEPORT))
-        serversock.sendall("hi!")
 
         _SOCKS.append([None, serversock])
 

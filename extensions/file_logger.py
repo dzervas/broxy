@@ -1,11 +1,11 @@
 import logging
 from hooker import hook
 
-logging.basicConfig(filename='boxy.log', level=logging.DEBUG)
+logging.basicConfig(filename='broxy.log', level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler())
 
 
-@hook("boxy.start")
+@hook("broxy.start")
 def start(lport, rhost, rport, protocol, ssl, cert, key):
     sslstr = ""
     if ssl:
@@ -38,6 +38,6 @@ def us2c(data):
     logging.info("SERVER %s%s\r" % (data.strip(), " " * 100))
 
 
-@hook("boxy.stop")
+@hook("broxy.stop")
 def stop():
     logging.info("Quitting...")

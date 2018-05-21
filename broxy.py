@@ -6,7 +6,7 @@ import hooker
 
 from relay import status, tcp, udp
 
-hooker.EVENTS.append(["boxy.start", "boxy.stop"])
+hooker.EVENTS.append(["broxy.start", "broxy.stop"])
 
 import extensions.file_logger
 
@@ -21,7 +21,7 @@ KEY = "key.pem"
 
 HELP = """
 Invalid arguments, usage:
-    boxy.py -i <input port> -p <remote port> -a <remote address> [-t|-s -c <cert-file> -k <key-file>]
+    broxy.py -i <input port> -p <remote port> -a <remote address> [-t|-s -c <cert-file> -k <key-file>]
     To create a self signed certificate:
         openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 """
@@ -35,7 +35,7 @@ def stop():
     else:
         tcp.stop()
 
-    hooker.EVENTS["boxy.stop"]()
+    hooker.EVENTS["broxy.stop"]()
     os._exit(0)
 
 
@@ -76,7 +76,7 @@ if not (0 < RELAYPORT <= 65535 and 0 < REMOTEPORT <= 65535 and REMOTEADDRESS != 
 print("Relay starting on port {0}, relaying {1} to {2}:{3}"
       .format(RELAYPORT, PROTOCOL, REMOTEADDRESS, REMOTEPORT))
 
-hooker.EVENTS["boxy.start"](RELAYPORT, REMOTEADDRESS, REMOTEPORT, PROTOCOL, SSL, CERT, KEY)
+hooker.EVENTS["broxy.start"](RELAYPORT, REMOTEADDRESS, REMOTEPORT, PROTOCOL, SSL, CERT, KEY)
 
 if PROTOCOL == "UDP":
     udp.start(RELAYPORT, REMOTEADDRESS, REMOTEPORT, RECVBUFF)
