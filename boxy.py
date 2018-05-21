@@ -16,8 +16,8 @@ REMOTEADDRESS = ""
 RECVBUFF = 2048
 PROTOCOL = "UDP"
 SSL = False
-CERT = None
-KEY = None
+CERT = "cert.pem"
+KEY = "key.pem"
 
 HELP = """
 Invalid arguments, usage:
@@ -70,10 +70,6 @@ except ValueError:
     sys.exit(2)
 
 if not (0 < RELAYPORT <= 65535 and 0 < REMOTEPORT <= 65535 and REMOTEADDRESS != ""):
-    print(HELP)
-    sys.exit(2)
-
-if SSL and not (CERT and KEY):
     print(HELP)
     sys.exit(2)
 

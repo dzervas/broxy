@@ -41,61 +41,67 @@ def acceptclients(use_ssl, cert, key):
     hooker.EVENTS["tcp.start"]()
 
     while True:
-        clientconn, _ = clientsock.accept()
+        serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        if use_ssl:
+            serversock = ssl.wrap_socket(serversock, keyfile=key, certfile=cert, server_side=False)
+
+        serversock.connect((_REMOTEADDRESS, _REMOTEPORT))
+        serversock.sendall("hi!")
+
+        _SOCKS.append([None, serversock])
+
+        serverthread = threading.Thread(target=server, kwargs={
+            'index': len(_SOCKS) - 1,
+        })
+        serverthread.start()
+
+        _SOCKS[len(_SOCKS) - 1][0], _ = clientsock.accept()
 
         if _KILL:
             hooker.EVENTS["tcp.stop"](clientsock)
             clientsock.close()
             for sock in _SOCKS:
-                sock.close()
+                close(sock)
             return
 
-        serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if use_ssl:
-            serversock = ssl.wrap_socket(serversock, keyfile=key, certfile=cert, server_side=False)
-        serversock.connect((_REMOTEADDRESS, _REMOTEPORT))
-        hooker.EVENTS["tcp.accept"](clientsock, serversock)
-
-        _SOCKS.append(clientconn)
-        _SOCKS.append(serversock)
+        hooker.EVENTS["tcp.accept"](_SOCKS[len(_SOCKS) - 1][0], serversock)
 
         clientthread = threading.Thread(target=client, kwargs={
-            'clnt': clientconn,
-            'srv': serversock
+            'index': len(_SOCKS) - 1,
         })
         clientthread.start()
 
-        serverthread = threading.Thread(target=server, kwargs={
-            'clnt': clientconn,
-            'srv': serversock
-        })
-        serverthread.start()
 
+def close(index):
+    global _SOCKS
 
-def close(clnt, srv):
     try:
-        clnt.close()
+        _SOCKS[index][0].close()
     except socket.error:
         pass
 
     try:
-        srv.close()
+        _SOCKS[index][1].close()
     except socket.error:
         pass
 
 
-def client(clnt, srv):
+def client(index):
     global _RECVBUFF
     global _CLIENTS
 
     _CLIENTS += 1
+
+    clnt = _SOCKS[index][0]
+    srv = _SOCKS[index][1]
 
     while True:
         try:
             data = bytearray(clnt.recv(_RECVBUFF))
 
             if not data:
-                close(clnt, srv)
+                close(_SOCKS[index])
                 break
 
             hooker.EVENTS["tcp.pre_c2s"](data, clnt, srv)
@@ -103,15 +109,18 @@ def client(clnt, srv):
             hooker.EVENTS["tcp.post_c2s"](data, clnt, srv)
             status.BYTESTOREMOTE += sys.getsizeof(data)
         except socket.error:
-            close(clnt, srv)
+            close(_SOCKS[index])
             break
 
     _CLIENTS -= 1
 
 
-def server(clnt, srv):
+def server(index):
     global _RECVBUFF
     global _SERVERS
+    global _SOCKS
+
+    srv = _SOCKS[index][1]
 
     _SERVERS += 1
 
@@ -120,15 +129,16 @@ def server(clnt, srv):
             data = bytearray(srv.recv(_RECVBUFF))
 
             if data == "":
-                close(clnt, srv)
+                close(_SOCKS[index])
                 break
 
-            hooker.EVENTS["tcp.pre_s2c"](data, clnt, srv)
-            clnt.sendall(data)
-            hooker.EVENTS["tcp.post_s2c"](data, clnt, srv)
+            hooker.EVENTS["tcp.pre_s2c"](data, _SOCKS[index][0], srv)
+            if _SOCKS[index][0]:
+                _SOCKS[index][0].sendall(data)
+            hooker.EVENTS["tcp.post_s2c"](data, _SOCKS[index][0], srv)
             status.BYTESFROMREMOTE += sys.getsizeof(data)
         except socket.error:
-            close(clnt, srv)
+            close(_SOCKS[index])
             break
 
     _SERVERS -= 1
