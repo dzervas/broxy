@@ -1,57 +1,61 @@
 import sys
 import socket
 import threading
-import status
+from relay import status
 
-_kill = False
-_relayport = 0
-_remoteaddress = ""
-_remoteport = 0
+_KILL = False
+_RELAYPORT = 0
+_REMOTEADDRESS = ""
+_REMOTEPORT = 0
+
 
 def relay():
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.bind(("0.0.0.0", _relayport))
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("0.0.0.0", _RELAYPORT))
 
-	incomingsetup = False
-	clientport = 0
-	clientip = ""
+    incomingsetup = False
+    clientport = 0
+    clientip = ""
 
-	while True:
-		data, fromaddr = sock.recvfrom(1024)
+    while True:
+        data, fromaddr = sock.recvfrom(1024)
 
-		if (_kill == True):
-			sock.close()
-			return
+        if _KILL:
+            sock.close()
+            return
 
-		if (incomingsetup == False):
-			clientport = fromaddr[1]
-			clientip = fromaddr[0]
-			incomingsetup = True
+        if not incomingsetup:
+            clientport = fromaddr[1]
+            clientip = fromaddr[0]
+            incomingsetup = True
 
-		if (fromaddr[0] == clientip):
-			#forward from client to server
-			sock.sendto(data, (_remoteaddress, _remoteport))
-			status.bytestoremote += sys.getsizeof(data)
-		else:
-			#forward from server to client
-			sock.sendto(data, (clientip, clientport))
-			status.bytesfromremote += sys.getsizeof(data)
+        if fromaddr[0] == clientip:
+            # Forward from client to server
+            sock.sendto(data, (_REMOTEADDRESS, _REMOTEPORT))
+            status.BYTESTOREMOTE += sys.getsizeof(data)
+        else:
+            # Forward from server to client
+            sock.sendto(data, (clientip, clientport))
+            status.BYTESFROMREMOTE += sys.getsizeof(data)
+
 
 def start(relayport, remoteaddress, remoteport):
-	global _relayport
-	global _remoteaddress
-	global _remoteport
+    global _RELAYPORT
+    global _REMOTEADDRESS
+    global _REMOTEPORT
 
-	_relayport = relayport
-	_remoteaddress = remoteaddress
-	_remoteport = remoteport
+    _RELAYPORT = relayport
+    _REMOTEADDRESS = remoteaddress
+    _REMOTEPORT = remoteport
 
-	relaythread = threading.Thread(target = relay)
-	relaythread.start()
+    relaythread = threading.Thread(target=relay)
+    relaythread.start()
+
 
 def stop():
-	_kill = True
-	#send anything to the input port to trigger it to read, therefore allowing the thread to close
-	quitsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	quitsock.sendto("killing", ("127.0.0.1", _relayport))
-	quitsock.close()
+    _KILL = True
+
+    # Send anything to the input port to trigger it to read, therefore allowing the thread to close
+    quitsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    quitsock.sendto("killing", ("127.0.0.1", _RELAYPORT))
+    quitsock.close()
