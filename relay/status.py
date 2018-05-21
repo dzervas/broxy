@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import time
 import os
@@ -18,30 +19,26 @@ def reportbandwidth():
     step = 0
 
     while True:
-        time.sleep(1)
+        time.sleep(0.5)
 
         if sys.platform == "win32":
             os.system('cls')
-        else:
-            os.system('clear')
-
-        print("Relaying on port {0} to {1}:{2}"
-              .format(_RELAYPORT, _REMOTEADDRESS, _REMOTEPORT))
-        print("From remote: {0:.6f}MB/s | To remote: {1:.6f}MB/s"
-              .format(float(BYTESFROMREMOTE)/1000000, float(BYTESTOREMOTE)/1000000))
 
         if step == 0:
-            print("\\")
+            loading = "\\"
             step += 1
         elif step == 1:
-            print("|")
+            loading = "|"
             step += 1
         elif step == 2:
-            print("/")
+            loading = "/"
             step += 1
         elif step == 3:
-            print("-")
+            loading = "-"
             step = 0
+
+        print("Relaying on port {0} to {1}:{2} | From remote: {3:.6f}MB/s | To remote: {4:.6f}MB/s... {5} ".format(_RELAYPORT, _REMOTEADDRESS, _REMOTEPORT, float(BYTESFROMREMOTE)/1000000, float(BYTESTOREMOTE)/1000000, loading), end="\r")
+        sys.stdout.flush()
 
         BYTESFROMREMOTE = 0
         BYTESTOREMOTE = 0

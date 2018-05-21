@@ -2,6 +2,7 @@ import logging
 from hooker import hook
 
 logging.basicConfig(filename='boxy.log', level=logging.DEBUG)
+logging.getLogger().addHandler(logging.StreamHandler())
 
 
 @hook("boxy.start")
@@ -29,12 +30,12 @@ def ts2c(data, client, server):
 
 @hook("udp.pre_c2s")
 def uc2s(data):
-    logging.info("CLIENT %s" % data.strip())
+    logging.info("CLIENT %s%s\r" % (data.strip(), " " * 100))
 
 
 @hook("udp.pre_s2c")
 def us2c(data):
-    logging.info("SERVER %s" % data.strip())
+    logging.info("SERVER %s%s\r" % (data.strip(), " " * 100))
 
 
 @hook("boxy.stop")
