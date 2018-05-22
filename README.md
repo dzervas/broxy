@@ -2,17 +2,18 @@ broxy
 ====
 
 Simple two-way UDP and TCP packet relay.
+Fork of [boxy](https://github.com/OliverF/boxy) by OliverF. Thank you! <3
 
 # Usage
-`broxy.py -i <input port> -a <remote address> -p <remote port> [-t]`
+`broxy.py -i <input port> -a <remote address> -p <remote port> [-t] [-s] [-c <cert>] [-k <key>]`
 
 - **-i \<input port\>**: Input port the relay listens on (and relays back from)
 - **-a \<remote address\>**: Remote IP address the relay will send incoming data to
 - **-p \<remote port\>**: Remote port the relay will send incoming data to
 - **-t**: Relay TCP (otherwise relay UDP if flag is not set)
 - **-s**: Relay SSL over TCP
-- **-c**: SSL certificate file (by default cert.pem)
-- **-k**: SSL private key file (by default key.pem)
+- **-c \<cert\>**: SSL certificate file (by default cert.pem)
+- **-k \<key\>**: SSL private key file (by default key.pem)
 
 # UDP example
 
